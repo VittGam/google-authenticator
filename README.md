@@ -11,9 +11,8 @@ Google Authenticator PAM module demonstrating two-factor authentication.
   2. /etc/pam.d/gnome-screensaver
   3. /etc/pam.d/sshd
 >	auth required pam_google_authenticator.so
-* When using this for the SSH daemon, make sure that you have:
-	ChallengeResponseAuthentication yes
-  in /etc/ssh/sshd_config
+* Make sure that you have this line in /etc/ssh/sshd_config:
+>	ChallengeResponseAuthentication yes
 * Run the "google-authenticator" binary to create a new secret key in your home
   directory.
 * If your system supports the "libqrencode" library, you will be shown a QRCode
