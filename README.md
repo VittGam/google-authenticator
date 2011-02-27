@@ -1,9 +1,12 @@
+#google-authenticator
+
 Google Authenticator PAM module demonstrating two-factor authentication.
 
 ##Usage
 
 * Ubuntu users please run this command before building this program:
-	sudo apt-get install libpam0g-dev
+
+>	sudo apt-get install libpam0g-dev
 
 * Build and install by running "make install".
 
@@ -13,7 +16,7 @@ Google Authenticator PAM module demonstrating two-factor authentication.
   2. /etc/pam.d/gnome-screensaver
   3. /etc/pam.d/sshd
 
-	auth required pam_google_authenticator.so
+>	auth required pam_google_authenticator.so
 
 * When using this for the SSH daemon, make sure that you have:
 	ChallengeResponseAuthentication yes
