@@ -14,6 +14,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
+// Modified by VittGam
+// https://github.com/VittGam/google-authenticator
 
 #define _GNU_SOURCE
 #include <fcntl.h>
@@ -439,6 +442,7 @@ static int invalidate_timebased_code(int tm, pam_handle_t *pamh,
     // remove it from the file.
     if (blocked - tm > 3 || tm - blocked > 3) {
       endptr += strspn(endptr, " \t");
+      ptr += strspn(ptr, " \t");
       memmove(ptr, endptr, strlen(endptr) + 1);
       memset(strrchr(ptr, '\000'), 0, endptr - ptr + 1);
     } else {
