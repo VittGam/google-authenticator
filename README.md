@@ -3,7 +3,7 @@ Google Authenticator PAM module demonstrating two-factor authentication.
 
 ##Usage
 * Ubuntu users please run this command before building this program:
->	sudo apt-get install libpam0g-dev
+>	sudo apt-get install libpam0g-dev libqrencode3
 * Build and install by running "make install".
 * Then add the following line at the end of your PAM configuration file.
   Under Ubuntu, you should add that line to three files:
