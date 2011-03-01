@@ -11,12 +11,12 @@ Google Authenticator PAM module demonstrating two-factor authentication.
   2. /etc/pam.d/gnome-screensaver
   3. /etc/pam.d/sshd
 >	auth required pam_google_authenticator.so pass_unconfigured
-* If you use ecryptfs:
-  1. Create a folder called /home/username.auth
-  2. Move the file /home/username/.google_authenticator to /home/username.auth/.google_authenticator
-  3. Run chmod 0400 /home/username.auth
-  4. The PAM config line should then look like:
+* If you use ecryptfs the PAM config line should look like:
 >	auth required pam_google_authenticator.so pass_unconfigured suffix=.auth
+* If you use ecryptfs run these commands as root, replacing username with your user name:
+> mkdir /home/username.auth
+> mv /home/username/.google_authenticator /home/username.auth/.google_authenticator
+> chmod 0400 /home/username.auth
 * Make sure that you have this line in /etc/ssh/sshd_config:
 >	ChallengeResponseAuthentication yes
 * Run the "google-authenticator" binary to create a new secret key in your home
