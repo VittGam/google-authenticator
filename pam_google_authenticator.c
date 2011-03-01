@@ -31,6 +31,7 @@
 #include <syslog.h>
 #include <time.h>
 #include <unistd.h>
+#include <errno.h>
 
 #define PAM_SM_AUTH
 #define PAM_SM_SESSION
@@ -42,6 +43,17 @@
 
 #define MODULE_NAME "pam_google_authenticator"
 #define SECRET      "/.google_authenticator"
+
+// If specified as an argument to the PAM module, then users with no
+// secret file will be allowed through, otherwise rejected.
+static const char opt_pass_unconfigured[] = "pass_unconfigured";
+static const char opt_secret_suffix[] = "suffix";
+
+// holds configuration options for the pam module
+struct google_auth_config {
+  int pass_on_missing_secret;
+  const char *secret_suffix;
+};
 
 static void log_message(int priority, pam_handle_t *pamh,
                         const char *format, ...) {
@@ -92,13 +104,17 @@ void set_secret_filename(char *fn) {
   secret_file_name = fn;
 }
 
-static char *get_secret_filename(pam_handle_t *pamh, const char *username,
+static char *get_secret_filename(pam_handle_t *pamh, 
+                                 struct google_auth_config *config,
+                                 const char *username,
                                  int *uid) {
   *uid = getuid();
   return strdup(secret_file_name);
 }
 #else
-static char *get_secret_filename(pam_handle_t *pamh, const char *username,
+static char *get_secret_filename(pam_handle_t *pamh, 
+                                 struct google_auth_config *config,
+                                 const char *username,
                                  int *uid) {
   // Obtain the user's home directory
   struct passwd pwbuf, *pw;
@@ -113,19 +129,28 @@ static char *get_secret_filename(pam_handle_t *pamh, const char *username,
   char *buf = malloc(len);
   char *secret_filename = NULL;
   *uid = -1;
+
+  int suffix_len = strlen(SECRET);
+  if (config->secret_suffix != NULL) 
+    suffix_len += strlen(config->secret_suffix);
+
   if (buf == NULL ||
       getpwnam_r(username, &pwbuf, buf, len, &pw) ||
       !pw ||
       !pw->pw_dir ||
       *pw->pw_dir != '/' ||
-      !(secret_filename = malloc(strlen(pw->pw_dir) + strlen(SECRET) + 1))) {
+      !(secret_filename = malloc(strlen(pw->pw_dir) + suffix_len + 1))) {
     log_message(LOG_ERR, pamh, "Failed to find home directory for user \"%s\"",
                 username);
     free(buf);
     free(secret_filename);
     return NULL;
   }
-  strcat(strcpy(secret_filename, pw->pw_dir), SECRET);
+  strcpy(secret_filename, pw->pw_dir);
+  if (config->secret_suffix != NULL)
+    strcat(secret_filename, config->secret_suffix);
+  strcat(secret_filename, SECRET);
+
   free(buf);
   *uid = pw->pw_uid;
   return secret_filename;
@@ -526,6 +551,36 @@ static int check_timebased_code(pam_handle_t *pamh,
   }
   return -1;
 }
+ 
+static void parse_config(pam_handle_t *pamh,
+                         int argc, const char **argv, 
+                         struct google_auth_config *config) {
+
+  config->pass_on_missing_secret = 0;
+  config->secret_suffix = NULL;
+
+  for (int i=0; i<argc; ++i) {
+    const char *arg = argv[i];
+    if (!strcmp(arg, opt_pass_unconfigured)) {
+      config->pass_on_missing_secret = 1;
+    } else if (!strncmp(arg, opt_secret_suffix, strlen(opt_secret_suffix))) {
+      int opt_len = strlen(opt_secret_suffix);
+      if (arg[opt_len] == '=') {
+        config->secret_suffix = strdup(arg+opt_len+1);
+      } else {
+        log_message(LOG_ERR, pamh, "Unable to parse option: %s", arg);
+      }
+    } else {
+      log_message(LOG_ERR, pamh, "Unrecognized option: %s", arg);
+    }
+  }
+}
+
+static void free_config(struct google_auth_config *config) {
+  if (config->secret_suffix != NULL) {
+    free((void*)config->secret_suffix);
+  }
+}
 
 static int google_authenticator(pam_handle_t *pamh, int flags,
                                 int argc, const char **argv) {
@@ -539,10 +594,14 @@ static int google_authenticator(pam_handle_t *pamh, int flags,
   uint8_t    *secret = NULL;
   int        secretLen = 0;
   int        code = -1;
+  struct google_auth_config config;
+
+  // handle configuration options
+  parse_config(pamh, argc, argv, &config);
 
   // Read and process status file, then ask the user for the verification code.
   if ((username = get_user_name(pamh)) &&
-      (secret_filename = get_secret_filename(pamh, username, &uid)) &&
+      (secret_filename = get_secret_filename(pamh, &config, username, &uid)) &&
       (old_uid = drop_privileges(pamh, username, uid)) >= 0 &&
       (fd = open_secret_file(pamh, secret_filename, username, uid,
                              &filesize, &mtime)) >= 0 &&
@@ -575,6 +634,18 @@ static int google_authenticator(pam_handle_t *pamh, int flags,
     }
   }
 
+  // special case - if the config file doesn't exists, then don't require
+  // authenticator..
+  if ((rc != PAM_SUCCESS) && 
+      config.pass_on_missing_secret &&
+      (secret_filename != NULL) && 
+      (access(secret_filename, F_OK) == -1) &&
+      (errno == ENOENT)) {
+
+    log_message(LOG_ERR, pamh, "No config file found, skipping authentication");
+    rc = PAM_IGNORE;
+  }
+
   // Clean up
   if (secret) {
     memset(secret, 0, secretLen);
@@ -590,6 +661,7 @@ static int google_authenticator(pam_handle_t *pamh, int flags,
   if (old_uid >= 0) {
     setfsuid(old_uid);
   }
+  free_config(&config);
   free(secret_filename);
   return rc;
 }
