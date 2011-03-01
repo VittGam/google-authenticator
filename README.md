@@ -19,7 +19,9 @@ Google Authenticator PAM module demonstrating two-factor authentication.
 
 * If you use ecryptfs run these commands as root, replacing username with your user name:
 >	mkdir /home/username.auth
+
 >	mv /home/username/.google_authenticator /home/username.auth/.google_authenticator
+
 >	chmod 0400 /home/username.auth
 
 * Make sure that you have this line in /etc/ssh/sshd_config:
