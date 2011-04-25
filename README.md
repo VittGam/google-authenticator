@@ -2,9 +2,8 @@
 Google Authenticator PAM module demonstrating two-factor authentication.
 
 ##Big fat warning ;)
-**I do not keep this repo updated.**
+**I do not keep this repo updated.** Please go at http://code.google.com/p/google-authenticator/source/browse/libpam to get the latest code.
 
-Please go at http://code.google.com/p/google-authenticator/source/browse/libpam to get the latest code.
 
 This repo is patched with http://code.google.com/p/google-authenticator/issues/detail?id=27#c5 It consists in these two switches:
 
