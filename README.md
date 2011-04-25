@@ -2,12 +2,14 @@
 Google Authenticator PAM module demonstrating two-factor authentication.
 
 ##Big fat warning ;)
-*I do not keep this repo updated.*
+**I do not keep this repo updated.**
+
 Please go at http://code.google.com/p/google-authenticator/source/browse/libpam to get the latest code.
 
 This repo is patched with http://code.google.com/p/google-authenticator/issues/detail?id=27#c5 It consists in these two switches:
-> 1. "pass_unconfigured": if this is specified, then the pam module will ignore users that do not have authenticator setup (it will return success).
-> 2. "suffix=[xxx]": for adding a suffix to the user's homedir path. [...] this is how I deal with encrypted home directories.
+
+>	1. "pass_unconfigured": if this is specified, then the pam module will ignore users that do not have authenticator setup (it will return success).
+>	2. "suffix=[xxx]": for adding a suffix to the user's homedir path. [...] this is how I deal with encrypted home directories.
 
 As of 2011/04/25, that patch hasn't been included upstream.
 
