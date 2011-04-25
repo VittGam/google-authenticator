@@ -10,7 +10,7 @@ This repo is patched with http://code.google.com/p/google-authenticator/issues/d
 >	1. "pass_unconfigured": if this is specified, then the pam module will ignore users that do not have authenticator setup (it will return success).
 >	2. "suffix=[xxx]": for adding a suffix to the user's homedir path. [...] this is how I deal with encrypted home directories.
 
-As of 2011/04/25, that patch hasn't been included upstream.
+As of 2011/04/25, the patch hasn't been included upstream.
 
 ##Usage
 * Ubuntu users please run this command before building this program:
